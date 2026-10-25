@@ -18,7 +18,9 @@ import requests
 from currency_data import CURRENCY_INFO, get_currency_display_str
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CACHE_DIR = os.path.join(BASE_DIR, "cache")
+# Use /tmp on Vercel serverless (read-only filesystem except /tmp)
+_IS_SERVERLESS = os.environ.get("VERCEL") or not os.access(BASE_DIR, os.W_OK)
+CACHE_DIR = "/tmp" if _IS_SERVERLESS else os.path.join(BASE_DIR, "cache")
 CACHE_FILE = os.path.join(CACHE_DIR, "rates_cache.json")
 
 
@@ -30,7 +32,7 @@ class CurrencyService:
         self._is_offline: bool = False
         self._supported_currencies: List[str] = sorted(list(CURRENCY_INFO.keys()))
         
-        # Ensure cache directory exists (fallback to /tmp if read-only filesystem)
+        # Ensure cache directory exists
         try:
             os.makedirs(CACHE_DIR, exist_ok=True)
             self._cache_file_path = CACHE_FILE
@@ -123,7 +125,7 @@ class CurrencyService:
     def _fetch_primary_api(self, base: str) -> Optional[Dict[str, float]]:
         url = f"https://open.er-api.com/v6/latest/{base}"
         try:
-            resp = requests.get(url, timeout=6)
+            resp = requests.get(url, timeout=8)
             if resp.status_code == 200:
                 data = resp.json()
                 if data.get("result") == "success" and "rates" in data:

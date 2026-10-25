@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Currency Converter</title>
+  <meta name="description" content="Minimal, clean, real-time currency converter supporting 160+ world currencies.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <!-- Minimal Header -->
+  <header class="navbar">
+    <div class="brand-section">
+      <h1>Currency Converter</h1>
+      <div class="status-pill" id="statusPill">
+        <span class="dot-online"></span>
+        <span id="statusLabel">Live rates</span>
+      </div>
+    </div>
+
+    <div class="nav-actions">
+      <a href="/ppt" class="btn-ghost" style="text-decoration: none;" target="_blank">
+        <span>Slides</span>
+      </a>
+
+      <button class="btn-ghost" id="btnSync">
+        <span id="syncSpin">↻</span>
+        <span>Sync</span>
+      </button>
+
+      <button class="btn-ghost" id="btnTheme">
+        <span id="themeLabel">Light</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Centered Content -->
+  <main class="container">
+    
+    <!-- Clean Segmented Navigation -->
+    <nav class="segmented-nav" role="tablist">
+      <button class="segmented-btn active" data-tab="tabSingle" role="tab" aria-selected="true">
+        Convert
+      </button>
+      <button class="segmented-btn" data-tab="tabMulti" role="tab" aria-selected="false">
+        Multi-Currency
+      </button>
+      <button class="segmented-btn" data-tab="tabRates" role="tab" aria-selected="false">
+        Live Rates
+      </button>
+    </nav>
+
+    <!-- ================= 1. Single Converter ================= -->
+    <section class="tab-pane active" id="tabSingle" role="tabpanel">
+      <div class="clean-card">
+        
+        <div class="conversion-box">
+          <!-- From Row -->
+          <div class="currency-row">
+            <div class="input-cell">
+              <label for="amountInput">You send</label>
+              <input type="number" id="amountInput" class="amount-field" value="100" min="0" step="any" placeholder="0.00" autocomplete="off">
+            </div>
+            <select id="fromCurrencySelect" class="currency-select" aria-label="From Currency">
+              <!-- Populated by JS -->
+            </select>
+          </div>
+
+          <!-- Swap Button Row -->
+          <div class="swap-row">
+            <button class="swap-btn" id="btnSwap" title="Swap currencies" aria-label="Swap currencies">
+              ⇄
+            </button>
+          </div>
+
+          <!-- To Row -->
+          <div class="currency-row">
+            <div class="input-cell">
+              <label for="convertedOutput">They receive</label>
+              <input type="text" id="convertedOutput" class="amount-field" readonly value="--">
+            </div>
+            <select id="toCurrencySelect" class="currency-select" aria-label="To Currency">
+              <!-- Populated by JS -->
+            </select>
+          </div>
+        </div>
+
+        <!-- Clean Rate Footer -->
+        <div class="rate-footer">
+          <div class="rate-text" id="rateSummary">
+            1 USD = --
+          </div>
+          <button class="btn-copy" id="btnCopy">
+            Copy
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= 2. Multi-Currency (5+ Currencies) ================= -->
+    <section class="tab-pane" id="tabMulti" role="tabpanel">
+      <div class="clean-card">
+        
+        <!-- Base Input -->
+        <div class="currency-row" style="margin-bottom: 1rem;">
+          <div class="input-cell">
+            <label for="multiAmountInput">Base Amount</label>
+            <input type="number" id="multiAmountInput" class="amount-field" value="100" min="0" step="any">
+          </div>
+          <select id="multiBaseSelect" class="currency-select" aria-label="Base Currency">
+            <!-- Populated by JS -->
+          </select>
+        </div>
+
+        <!-- Presets Bar -->
+        <div class="presets-bar" id="presetsBar">
+          <span style="font-size: 0.75rem; color: var(--text-muted); margin-right: 0.25rem;">Presets:</span>
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Multi Target Currencies List -->
+        <div class="multi-list" id="multiList">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Add Currency Select -->
+        <div class="add-currency-row">
+          <select id="addCurrencySelect" class="currency-select" style="flex: 1;">
+            <option value="">+ Add target currency...</option>
+          </select>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= 3. Live Rates Table ================= -->
+    <section class="tab-pane" id="tabRates" role="tabpanel">
+      <div class="clean-card">
+        
+        <div class="matrix-controls">
+          <select id="ratesBaseSelect" class="currency-select" style="width: 140px;">
+            <!-- Populated by JS -->
+          </select>
+          <input type="text" id="ratesFilterInput" class="clean-input" placeholder="Search currency or country...">
+        </div>
+
+        <table class="clean-table">
+          <thead>
+            <tr>
+              <th>Currency</th>
+              <th>Country</th>
+              <th style="text-align: right;">Rate</th>
+              <th style="text-align: right;">Inverse</th>
+            </tr>
+          </thead>
+          <tbody id="ratesTableBody">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    Currency Converter • Free REST API & Offline Cache • 166 Currencies
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

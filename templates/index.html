@@ -4,171 +4,405 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Currency Converter</title>
-  <meta name="description" content="Minimal, clean, real-time currency converter supporting 160+ world currencies.">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <meta name="description" content="Real-time currency converter — 160+ currencies, live rates, minimal design.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#09090b; --surface:#111113; --surface-2:#18181c; --surface-3:#222228;
+      --border:#2a2a32; --border-2:#1e1e25;
+      --text:#f0f0f5; --text-2:#9898a8; --text-3:#62626e;
+      --accent:#6c63ff; --accent-2:#8b85ff;
+      --accent-glow:rgba(108,99,255,0.25); --accent-sub:rgba(108,99,255,0.1);
+      --green:#22c55e; --red:#ef4444; --amber:#f59e0b;
+      --r-sm:6px; --r-md:10px; --r-lg:16px; --r-xl:22px; --r-full:9999px;
+      --shadow-md:0 4px 16px rgba(0,0,0,0.6);
+      --shadow-glow:0 0 24px rgba(108,99,255,0.15);
+      --t:160ms cubic-bezier(0.4,0,0.2,1);
+    }
+    [data-theme="light"] {
+      --bg:#f4f4f8; --surface:#ffffff; --surface-2:#f0f0f6; --surface-3:#e8e8f0;
+      --border:#dcdce8; --border-2:#ebebf4;
+      --text:#0f0f18; --text-2:#5a5a70; --text-3:#9898a8;
+      --accent:#5b52f0; --accent-2:#7b74ff;
+      --accent-glow:rgba(91,82,240,0.15); --accent-sub:rgba(91,82,240,0.08);
+      --shadow-md:0 4px 16px rgba(0,0,0,0.08);
+      --shadow-glow:0 0 24px rgba(91,82,240,0.1);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;transition:background var(--t),color var(--t);line-height:1.5}
+    /* NAVBAR */
+    .navbar{position:sticky;top:0;z-index:100;background:rgba(9,9,11,0.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 1.5rem;height:56px;display:flex;align-items:center;justify-content:space-between}
+    [data-theme="light"] .navbar{background:rgba(244,244,248,0.85)}
+    .brand{display:flex;align-items:center;gap:0.75rem}
+    .brand-logo{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent-2));border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;font-size:1rem;box-shadow:var(--shadow-glow);flex-shrink:0}
+    .brand-name{font-size:0.95rem;font-weight:600;letter-spacing:-0.02em}
+    .status-pill{display:inline-flex;align-items:center;gap:0.4rem;padding:0.2rem 0.65rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-full);font-size:0.7rem;font-weight:500;color:var(--text-2)}
+    .dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 2s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+    .nav-right{display:flex;align-items:center;gap:0.5rem}
+    .btn-icon{background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);height:34px;padding:0 0.75rem;border-radius:var(--r-sm);font-size:0.78rem;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:0.4rem;transition:all var(--t);font-family:inherit;white-space:nowrap;text-decoration:none}
+    .btn-icon:hover{background:var(--surface-3);color:var(--text);border-color:var(--accent)}
+    /* LAYOUT */
+    main{flex:1;max-width:640px;width:100%;margin:2.5rem auto 3rem;padding:0 1.25rem}
+    /* TABS */
+    .tabs{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:4px;margin-bottom:1.75rem;gap:2px}
+    .tab-btn{flex:1;padding:0.55rem;border:none;background:transparent;color:var(--text-2);font-size:0.82rem;font-weight:500;border-radius:calc(var(--r-lg) - 4px);cursor:pointer;transition:all var(--t);font-family:inherit}
+    .tab-btn:hover{color:var(--text)}
+    .tab-btn.active{background:var(--accent);color:#fff;font-weight:600;box-shadow:0 2px 8px var(--accent-glow)}
+    .tab-pane{display:none}.tab-pane.active{display:block}
+    /* CARD */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:1.75rem;box-shadow:var(--shadow-md);position:relative;overflow:hidden}
+    .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0.5}
+    /* INPUT ROWS */
+    .cx-row{background:var(--surface-2);border:1.5px solid var(--border);border-radius:var(--r-lg);padding:1rem 1.1rem;display:flex;align-items:center;gap:0.75rem;transition:border-color var(--t),box-shadow var(--t)}
+    .cx-row:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-sub)}
+    .cx-label{font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-3);margin-bottom:0.2rem}
+    .cx-input{background:transparent;border:none;font-size:1.7rem;font-weight:700;color:var(--text);outline:none;width:100%;font-family:inherit;letter-spacing:-0.03em}
+    .cx-input::placeholder{color:var(--text-3)}
+    .cx-input[readonly]{color:var(--accent-2);cursor:default}
+    .cx-input::-webkit-outer-spin-button,.cx-input::-webkit-inner-spin-button{-webkit-appearance:none}
+    .cx-select{flex-shrink:0;background:var(--surface-3);border:1px solid var(--border);color:var(--text);padding:0.55rem 0.65rem;border-radius:var(--r-md);font-size:0.88rem;font-weight:600;cursor:pointer;outline:none;min-width:120px;max-width:140px;font-family:inherit;transition:border-color var(--t)}
+    .cx-select:focus{border-color:var(--accent)}
+    /* SWAP */
+    .swap-wrap{display:flex;justify-content:center;margin:0.5rem 0;position:relative;height:32px}
+    .swap-wrap::before{content:'';position:absolute;top:50%;left:0;right:0;height:1px;background:var(--border)}
+    .btn-swap{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:var(--surface);border:1.5px solid var(--border);color:var(--text-2);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all var(--t);z-index:2}
+    .btn-swap:hover{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 3px var(--accent-sub);transform:translateY(-50%) rotate(180deg)}
+    /* RATE BAR */
+    .rate-bar{display:flex;align-items:center;justify-content:space-between;margin-top:1.25rem;padding-top:1.1rem;border-top:1px solid var(--border-2)}
+    .rate-info{font-size:0.82rem;color:var(--text-2);line-height:1.4}
+    .rate-info strong{color:var(--text)}
+    .btn-copy{background:var(--accent-sub);border:1px solid transparent;color:var(--accent-2);font-size:0.78rem;font-weight:600;padding:0.4rem 0.85rem;border-radius:var(--r-sm);cursor:pointer;transition:all var(--t);font-family:inherit}
+    .btn-copy:hover{background:var(--accent);color:#fff}
+    /* MULTI */
+    .presets-row{display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;margin:1rem 0 1.25rem}
+    .presets-label{font-size:0.7rem;color:var(--text-3);font-weight:500}
+    .preset-btn{background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);padding:0.28rem 0.65rem;border-radius:var(--r-sm);font-size:0.75rem;font-weight:500;cursor:pointer;transition:all var(--t);font-family:inherit}
+    .preset-btn:hover{border-color:var(--accent);color:var(--accent-2)}
+    .multi-list{display:flex;flex-direction:column;gap:0.5rem}
+    .multi-item{display:flex;align-items:center;justify-content:space-between;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:0.85rem 1rem;transition:border-color var(--t)}
+    .mi-left{display:flex;align-items:center;gap:0.7rem}
+    .mi-flag{font-size:1.25rem;line-height:1}
+    .mi-code{font-size:0.9rem;font-weight:700}
+    .mi-name{font-size:0.72rem;color:var(--text-3);margin-top:0.05rem}
+    .mi-right{display:flex;align-items:center;gap:0.85rem}
+    .mi-value{font-size:1.05rem;font-weight:700;text-align:right}
+    .mi-rate{font-size:0.68rem;color:var(--text-3);text-align:right;margin-top:0.05rem}
+    .btn-remove{background:transparent;border:none;color:var(--text-3);font-size:1.1rem;line-height:1;cursor:pointer;padding:0.2rem 0.35rem;border-radius:var(--r-sm);transition:all var(--t)}
+    .btn-remove:hover{color:var(--red);background:rgba(239,68,68,0.08)}
+    .add-row{margin-top:0.85rem}
+    .add-select{width:100%;background:var(--surface-2);border:1.5px dashed var(--border);color:var(--text-2);padding:0.7rem 0.85rem;border-radius:var(--r-md);font-size:0.85rem;font-weight:500;cursor:pointer;outline:none;font-family:inherit;transition:border-color var(--t)}
+    .add-select:focus{border-color:var(--accent);border-style:solid}
+    /* RATES TABLE */
+    .table-controls{display:flex;gap:0.65rem;margin-bottom:1rem}
+    .tbl-select{background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:0.55rem 0.75rem;border-radius:var(--r-md);font-size:0.85rem;font-weight:600;outline:none;cursor:pointer;font-family:inherit;width:145px;flex-shrink:0}
+    .search-input{flex:1;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:0.55rem 0.85rem;border-radius:var(--r-md);font-size:0.85rem;outline:none;font-family:inherit;transition:border-color var(--t)}
+    .search-input:focus{border-color:var(--accent)}
+    .search-input::placeholder{color:var(--text-3)}
+    .rates-table{width:100%;border-collapse:collapse;font-size:0.83rem}
+    .rates-table th{text-align:left;padding:0.6rem 0.75rem;border-bottom:1px solid var(--border);color:var(--text-3);font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em}
+    .rates-table td{padding:0.7rem 0.75rem;border-bottom:1px solid var(--border-2)}
+    .rates-table tr:last-child td{border-bottom:none}
+    .rates-table tr:hover td{background:var(--surface-2)}
+    .rate-num{text-align:right;font-weight:600}
+    .rate-inv{text-align:right;color:var(--text-3)}
+    /* FOOTER */
+    footer{text-align:center;padding:1.5rem;font-size:0.72rem;color:var(--text-3);border-top:1px solid var(--border)}
+    /* LOADING */
+    .loading-row{display:flex;gap:6px;justify-content:center;padding:1.5rem}
+    .loading-dot{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:bounce 1.2s ease-in-out infinite}
+    .loading-dot:nth-child(2){animation-delay:0.2s}
+    .loading-dot:nth-child(3){animation-delay:0.4s}
+    @keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:0.4}40%{transform:translateY(-6px);opacity:1}}
+    @media(max-width:480px){main{margin:1.5rem auto;padding:0 0.85rem}.card{padding:1.25rem}.cx-input{font-size:1.4rem}.brand-name{display:none}}
+  </style>
 </head>
 <body>
-
-  <!-- Minimal Header -->
   <header class="navbar">
-    <div class="brand-section">
-      <h1>Currency Converter</h1>
-      <div class="status-pill" id="statusPill">
-        <span class="dot-online"></span>
+    <div class="brand">
+      <div class="brand-logo">💱</div>
+      <span class="brand-name">Currency Converter</span>
+      <div class="status-pill">
+        <span class="dot" id="statusDot"></span>
         <span id="statusLabel">Live rates</span>
       </div>
     </div>
-
-    <div class="nav-actions">
-      <a href="/ppt" class="btn-ghost" style="text-decoration: none;" target="_blank">
-        <span>Slides</span>
-      </a>
-
-      <button class="btn-ghost" id="btnSync">
-        <span id="syncSpin">↻</span>
-        <span>Sync</span>
-      </button>
-
-      <button class="btn-ghost" id="btnTheme">
-        <span id="themeLabel">Light</span>
-      </button>
+    <div class="nav-right">
+      <a href="/ppt" target="_blank" class="btn-icon">📊 Slides</a>
+      <button class="btn-icon" id="btnSync">↻ Sync</button>
+      <button class="btn-icon" id="btnTheme">☀️ Light</button>
     </div>
   </header>
 
-  <!-- Centered Content -->
-  <main class="container">
-    
-    <!-- Clean Segmented Navigation -->
-    <nav class="segmented-nav" role="tablist">
-      <button class="segmented-btn active" data-tab="tabSingle" role="tab" aria-selected="true">
-        Convert
-      </button>
-      <button class="segmented-btn" data-tab="tabMulti" role="tab" aria-selected="false">
-        Multi-Currency
-      </button>
-      <button class="segmented-btn" data-tab="tabRates" role="tab" aria-selected="false">
-        Live Rates
-      </button>
-    </nav>
+  <main>
+    <div class="tabs" role="tablist">
+      <button class="tab-btn active" data-tab="tabSingle" role="tab">Convert</button>
+      <button class="tab-btn" data-tab="tabMulti" role="tab">Multi-Currency</button>
+      <button class="tab-btn" data-tab="tabRates" role="tab">Live Rates</button>
+    </div>
 
-    <!-- ================= 1. Single Converter ================= -->
-    <section class="tab-pane active" id="tabSingle" role="tabpanel">
-      <div class="clean-card">
-        
-        <div class="conversion-box">
-          <!-- From Row -->
-          <div class="currency-row">
-            <div class="input-cell">
-              <label for="amountInput">You send</label>
-              <input type="number" id="amountInput" class="amount-field" value="100" min="0" step="any" placeholder="0.00" autocomplete="off">
-            </div>
-            <select id="fromCurrencySelect" class="currency-select" aria-label="From Currency">
-              <!-- Populated by JS -->
-            </select>
+    <!-- 1. SINGLE CONVERTER -->
+    <section class="tab-pane active" id="tabSingle">
+      <div class="card">
+        <div class="cx-row">
+          <div style="flex:1">
+            <div class="cx-label">You send</div>
+            <input class="cx-input" type="number" id="amountInput" value="100" min="0" step="any" placeholder="0" autocomplete="off">
           </div>
-
-          <!-- Swap Button Row -->
-          <div class="swap-row">
-            <button class="swap-btn" id="btnSwap" title="Swap currencies" aria-label="Swap currencies">
-              ⇄
-            </button>
-          </div>
-
-          <!-- To Row -->
-          <div class="currency-row">
-            <div class="input-cell">
-              <label for="convertedOutput">They receive</label>
-              <input type="text" id="convertedOutput" class="amount-field" readonly value="--">
-            </div>
-            <select id="toCurrencySelect" class="currency-select" aria-label="To Currency">
-              <!-- Populated by JS -->
-            </select>
-          </div>
+          <select class="cx-select" id="fromCurrencySelect" aria-label="From currency"></select>
         </div>
-
-        <!-- Clean Rate Footer -->
-        <div class="rate-footer">
-          <div class="rate-text" id="rateSummary">
-            1 USD = --
-          </div>
-          <button class="btn-copy" id="btnCopy">
-            Copy
-          </button>
+        <div class="swap-wrap">
+          <button class="btn-swap" id="btnSwap" title="Swap" aria-label="Swap currencies">⇅</button>
         </div>
-
+        <div class="cx-row">
+          <div style="flex:1">
+            <div class="cx-label">They receive</div>
+            <input class="cx-input" type="text" id="convertedOutput" readonly value="—" placeholder="—">
+          </div>
+          <select class="cx-select" id="toCurrencySelect" aria-label="To currency"></select>
+        </div>
+        <div class="rate-bar">
+          <div class="rate-info" id="rateSummary">Enter an amount to convert</div>
+          <button class="btn-copy" id="btnCopy">Copy</button>
+        </div>
       </div>
     </section>
 
-    <!-- ================= 2. Multi-Currency (5+ Currencies) ================= -->
-    <section class="tab-pane" id="tabMulti" role="tabpanel">
-      <div class="clean-card">
-        
-        <!-- Base Input -->
-        <div class="currency-row" style="margin-bottom: 1rem;">
-          <div class="input-cell">
-            <label for="multiAmountInput">Base Amount</label>
-            <input type="number" id="multiAmountInput" class="amount-field" value="100" min="0" step="any">
+    <!-- 2. MULTI-CURRENCY -->
+    <section class="tab-pane" id="tabMulti">
+      <div class="card">
+        <div class="cx-row">
+          <div style="flex:1">
+            <div class="cx-label">Base Amount</div>
+            <input class="cx-input" type="number" id="multiAmountInput" value="100" min="0" step="any">
           </div>
-          <select id="multiBaseSelect" class="currency-select" aria-label="Base Currency">
-            <!-- Populated by JS -->
-          </select>
+          <select class="cx-select" id="multiBaseSelect" aria-label="Base currency"></select>
         </div>
-
-        <!-- Presets Bar -->
-        <div class="presets-bar" id="presetsBar">
-          <span style="font-size: 0.75rem; color: var(--text-muted); margin-right: 0.25rem;">Presets:</span>
-          <!-- Populated by JS -->
+        <div class="presets-row" id="presetsBar">
+          <span class="presets-label">Presets:</span>
         </div>
-
-        <!-- Multi Target Currencies List -->
         <div class="multi-list" id="multiList">
-          <!-- Populated by JS -->
+          <div class="loading-row"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>
         </div>
-
-        <!-- Add Currency Select -->
-        <div class="add-currency-row">
-          <select id="addCurrencySelect" class="currency-select" style="flex: 1;">
+        <div class="add-row">
+          <select class="add-select" id="addCurrencySelect">
             <option value="">+ Add target currency...</option>
           </select>
         </div>
-
       </div>
     </section>
 
-    <!-- ================= 3. Live Rates Table ================= -->
-    <section class="tab-pane" id="tabRates" role="tabpanel">
-      <div class="clean-card">
-        
-        <div class="matrix-controls">
-          <select id="ratesBaseSelect" class="currency-select" style="width: 140px;">
-            <!-- Populated by JS -->
-          </select>
-          <input type="text" id="ratesFilterInput" class="clean-input" placeholder="Search currency or country...">
+    <!-- 3. LIVE RATES -->
+    <section class="tab-pane" id="tabRates">
+      <div class="card">
+        <div class="table-controls">
+          <select class="tbl-select" id="ratesBaseSelect" aria-label="Base currency"></select>
+          <input class="search-input" type="text" id="ratesFilterInput" placeholder="Search currency or country...">
         </div>
-
-        <table class="clean-table">
+        <table class="rates-table">
           <thead>
             <tr>
               <th>Currency</th>
               <th>Country</th>
-              <th style="text-align: right;">Rate</th>
-              <th style="text-align: right;">Inverse</th>
+              <th class="rate-num">Rate</th>
+              <th class="rate-inv">Inverse</th>
             </tr>
           </thead>
           <tbody id="ratesTableBody">
-            <!-- Populated by JS -->
+            <tr><td colspan="4"><div class="loading-row"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div></td></tr>
           </tbody>
         </table>
-
       </div>
     </section>
-
   </main>
 
-  <footer class="footer">
-    Currency Converter • Free REST API & Offline Cache • 166 Currencies
-  </footer>
+  <footer>Currency Converter &nbsp;·&nbsp; Live rates via ExchangeRate-API &nbsp;·&nbsp; 166+ Currencies</footer>
 
-  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded',()=>{
+    const S={currencies:{},presets:{},rates:{},multiTargets:['EUR','GBP','INR','JPY','AUD','CAD']};
+    const html=document.documentElement;
+    const btnTheme=document.getElementById('btnTheme');
+    applyTheme(localStorage.getItem('theme')||'dark');
+    btnTheme.addEventListener('click',()=>applyTheme(html.dataset.theme==='dark'?'light':'dark'));
+    function applyTheme(t){html.dataset.theme=t;localStorage.setItem('theme',t);btnTheme.textContent=t==='dark'?'☀️ Light':'🌙 Dark';}
+
+    document.querySelectorAll('.tab-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+        if(btn.dataset.tab==='tabRates') loadRatesTable();
+      });
+    });
+
+    const amountInput=document.getElementById('amountInput');
+    const fromSelect=document.getElementById('fromCurrencySelect');
+    const toSelect=document.getElementById('toCurrencySelect');
+    const convertedOutput=document.getElementById('convertedOutput');
+    const rateSummary=document.getElementById('rateSummary');
+    const btnSwap=document.getElementById('btnSwap');
+    const btnCopy=document.getElementById('btnCopy');
+    const multiAmountInput=document.getElementById('multiAmountInput');
+    const multiBaseSelect=document.getElementById('multiBaseSelect');
+    const presetsBar=document.getElementById('presetsBar');
+    const multiList=document.getElementById('multiList');
+    const addCurrSelect=document.getElementById('addCurrencySelect');
+    const ratesBaseSelect=document.getElementById('ratesBaseSelect');
+    const ratesFilter=document.getElementById('ratesFilterInput');
+    const ratesBody=document.getElementById('ratesTableBody');
+    const statusLabel=document.getElementById('statusLabel');
+    const statusDot=document.getElementById('statusDot');
+    const btnSync=document.getElementById('btnSync');
+
+    async function init(){
+      try{
+        const res=await fetch('/api/currencies');
+        const data=await res.json();
+        S.currencies=data.currencies||{};
+        S.presets=data.presets||{};
+        fillDropdowns();
+        fillPresets();
+        convertSingle();
+        convertMulti();
+        checkStatus();
+      }catch(e){statusLabel.textContent='Error';statusDot.style.background='#ef4444';}
+    }
+
+    function fillDropdowns(){
+      const codes=Object.keys(S.currencies).sort();
+      [fromSelect,toSelect,multiBaseSelect,ratesBaseSelect].forEach(sel=>{
+        sel.innerHTML='';
+        codes.forEach(c=>{const i=S.currencies[c]||{};sel.add(new Option(`${i.flag||''} ${c} – ${i.name||c}`,c));});
+      });
+      addCurrSelect.innerHTML='<option value="">+ Add target currency...</option>';
+      codes.forEach(c=>{const i=S.currencies[c]||{};addCurrSelect.add(new Option(`${i.flag||''} ${c} – ${i.name||c}`,c));});
+      fromSelect.value='USD';toSelect.value='INR';multiBaseSelect.value='USD';ratesBaseSelect.value='USD';
+    }
+
+    function fillPresets(){
+      presetsBar.innerHTML='<span class="presets-label">Presets:</span>';
+      Object.entries(S.presets).forEach(([name,list])=>{
+        const btn=document.createElement('button');
+        btn.className='preset-btn';btn.textContent=name;
+        btn.addEventListener('click',()=>{S.multiTargets=list.filter(c=>c!==multiBaseSelect.value);convertMulti();});
+        presetsBar.appendChild(btn);
+      });
+    }
+
+    async function checkStatus(){
+      try{
+        const res=await fetch('/api/status');const data=await res.json();
+        if(data.is_offline){statusLabel.textContent='Cached';statusDot.style.background='#f59e0b';statusDot.style.animation='none';}
+        else{statusLabel.textContent='Live rates';statusDot.style.background='#22c55e';}
+      }catch(e){}
+    }
+
+    let timer;
+    function debounce(fn,ms=220){clearTimeout(timer);timer=setTimeout(fn,ms);}
+
+    amountInput.addEventListener('input',()=>debounce(convertSingle));
+    fromSelect.addEventListener('change',convertSingle);
+    toSelect.addEventListener('change',convertSingle);
+    btnSwap.addEventListener('click',()=>{[fromSelect.value,toSelect.value]=[toSelect.value,fromSelect.value];convertSingle();});
+
+    async function convertSingle(){
+      const amount=parseFloat(amountInput.value);
+      if(isNaN(amount)||amount<0){convertedOutput.value='—';return;}
+      const from=fromSelect.value,to=toSelect.value;
+      if(!from||!to)return;
+      try{
+        const res=await fetch('/api/convert',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount,from,to})});
+        const d=await res.json();
+        if(d.success){
+          convertedOutput.value=fmt(d.result);
+          rateSummary.innerHTML=`1 <strong>${from}</strong> = ${fmtRate(d.rate)} <strong>${to}</strong><small style="margin-left:0.5rem;color:var(--text-3)">(1 ${to} = ${fmtRate(d.inverse_rate)} ${from})</small>`;
+        }
+      }catch(e){convertedOutput.value='Error';}
+    }
+
+    btnCopy.addEventListener('click',()=>{
+      const text=`${amountInput.value} ${fromSelect.value} = ${convertedOutput.value} ${toSelect.value}`;
+      navigator.clipboard.writeText(text).then(()=>{btnCopy.textContent='✓ Copied';setTimeout(()=>{btnCopy.textContent='Copy';},1500);});
+    });
+
+    multiAmountInput.addEventListener('input',()=>debounce(convertMulti));
+    multiBaseSelect.addEventListener('change',()=>{S.multiTargets=S.multiTargets.filter(c=>c!==multiBaseSelect.value);convertMulti();});
+    addCurrSelect.addEventListener('change',()=>{
+      const v=addCurrSelect.value;
+      if(v&&v!==multiBaseSelect.value&&!S.multiTargets.includes(v)){S.multiTargets.push(v);convertMulti();}
+      addCurrSelect.value='';
+    });
+
+    async function convertMulti(){
+      const amount=parseFloat(multiAmountInput.value);
+      if(isNaN(amount)||amount<0)return;
+      const base=multiBaseSelect.value;
+      if(!base||S.multiTargets.length===0){multiList.innerHTML='<p style="text-align:center;color:var(--text-3);padding:1.5rem 0;font-size:0.85rem">No target currencies added.</p>';return;}
+      try{
+        const res=await fetch('/api/convert-multiple',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount,base,targets:S.multiTargets})});
+        const d=await res.json();
+        if(d.success)renderMulti(base,d.results);
+      }catch(e){}
+    }
+
+    function renderMulti(base,results){
+      multiList.innerHTML='';
+      results.forEach(item=>{
+        const code=item.to_curr,info=S.currencies[code]||{};
+        const el=document.createElement('div');el.className='multi-item';
+        el.innerHTML=`<div class="mi-left"><span class="mi-flag">${info.flag||'🏳'}</span><div><div class="mi-code">${code}</div><div class="mi-name">${info.name||code}</div></div></div><div class="mi-right"><div><div class="mi-value">${fmt(item.result)}</div><div class="mi-rate">1 ${base} = ${fmtRate(item.rate)}</div></div><button class="btn-remove" title="Remove">×</button></div>`;
+        el.querySelector('.btn-remove').addEventListener('click',()=>{S.multiTargets=S.multiTargets.filter(c=>c!==code);convertMulti();});
+        multiList.appendChild(el);
+      });
+    }
+
+    ratesBaseSelect.addEventListener('change',loadRatesTable);
+    ratesFilter.addEventListener('input',renderRatesTable);
+
+    async function loadRatesTable(){
+      const base=ratesBaseSelect.value;
+      ratesBody.innerHTML='<tr><td colspan="4"><div class="loading-row"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div></td></tr>';
+      try{
+        const res=await fetch(`/api/rates?base=${base}`);const data=await res.json();
+        S.rates=data.rates||{};renderRatesTable();
+      }catch(e){ratesBody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--red);padding:1rem">Error loading.</td></tr>';}
+    }
+
+    function renderRatesTable(){
+      const base=ratesBaseSelect.value,q=ratesFilter.value.toLowerCase().trim();
+      const top=['USD','EUR','GBP','INR','JPY','AUD','CAD','CHF','CNY','AED','SGD'];
+      const codes=Object.keys(S.rates).sort((a,b)=>{const ia=top.indexOf(a),ib=top.indexOf(b);if(ia!==-1&&ib!==-1)return ia-ib;if(ia!==-1)return -1;if(ib!==-1)return 1;return a.localeCompare(b);});
+      let html='';
+      codes.forEach(c=>{
+        if(c===base)return;
+        const info=S.currencies[c]||{};
+        const search=`${c} ${info.name||''} ${info.country||''}`.toLowerCase();
+        if(q&&!search.includes(q))return;
+        const rate=S.rates[c],inv=rate>0?1/rate:0;
+        html+=`<tr><td><strong>${info.flag||''} ${c}</strong> <span style="color:var(--text-3);font-size:0.78rem;margin-left:0.3rem">${info.name||''}</span></td><td style="color:var(--text-2);font-size:0.8rem">${info.country||''}</td><td class="rate-num">${fmtRate(rate)}</td><td class="rate-inv">${fmtRate(inv)}</td></tr>`;
+      });
+      ratesBody.innerHTML=html||'<tr><td colspan="4" style="text-align:center;color:var(--text-3);padding:1.2rem">No matching currencies.</td></tr>';
+    }
+
+    btnSync.addEventListener('click',async()=>{
+      btnSync.style.opacity='0.5';btnSync.textContent='⟳ Syncing...';
+      try{
+        await fetch('/api/refresh',{method:'POST'});
+        await convertSingle();await convertMulti();
+        if(document.getElementById('tabRates').classList.contains('active'))await loadRatesTable();
+        await checkStatus();
+      }finally{btnSync.style.opacity='1';btnSync.textContent='↻ Sync';}
+    });
+
+    function fmt(n){return n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:n<1&&n>0?6:4});}
+    function fmtRate(n){if(n>=1000)return n.toFixed(2);if(n>=1)return n.toFixed(4);return n.toFixed(6);}
+
+    init();
+  });
+  </script>
 </body>
 </html>
